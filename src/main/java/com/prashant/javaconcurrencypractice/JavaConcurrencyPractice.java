@@ -1,5 +1,8 @@
 package com.prashant.javaconcurrencypractice;
 
+import com.prashant.javaconcurrencypractice.consumers.BatchConsumerThread;
+import com.prashant.javaconcurrencypractice.consumers.ConsumerState;
+import com.prashant.javaconcurrencypractice.consumers.RealtimeConsumerThread;
 import com.prashant.javaconcurrencypractice.services.BatchConsumer;
 import com.prashant.javaconcurrencypractice.services.RealtimeConsumer;
 import com.prashant.javaconcurrencypractice.services.StateHelper;
@@ -28,15 +31,10 @@ public class JavaConcurrencyPractice implements ApplicationRunner {
     }
 
     @Override
-    public void run(ApplicationArguments args) throws Exception {
+    public void run(ApplicationArguments args) {
 
-        Thread realTimeThread = new Thread(() -> {
-            realtimeConsumer.consume();
-        });
-
-        Thread batchThread = new Thread(() -> {
-            batchConsumer.consume();
-        });
+        Thread realTimeThread = new RealtimeConsumerThread();
+        Thread batchThread = new BatchConsumerThread();
 
         realTimeThread.start();
         batchThread.start();
@@ -44,18 +42,12 @@ public class JavaConcurrencyPractice implements ApplicationRunner {
         try {
             batchThread.join();
             realTimeThread.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            batchThread.join();
-            realTimeThread.join();
+        } catch (Exception e) {
+            log.error("error on join", e);
         } finally {
-            if (stateHelper.errorOccurred.get()) {
+            if (ConsumerState.errorOccurred.get()) {
                 System.exit(1);
             }
         }
-
     }
 }
